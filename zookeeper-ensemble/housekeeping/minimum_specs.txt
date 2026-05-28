@@ -1,0 +1,54 @@
+Q: What system specs are required for a apache zookeeper install on a VM?
+
+Apache ZooKeeper is a coordination service that is highly reliant on memory 
+and fast disk I/O, while being relatively lightweight on CPU. Because its 
+performance directly impacts the reliability of distributed systems (like 
+Apache Kafka, Hadoop, or HBase), sizing your Virtual Machine correctly is
+crucial.
+
+*** Hardware Specification Guidelines
+
+Minimal / Development (Single VM)
+If you are running ZooKeeper locally or on a single VM for testing, prototyping, 
+or light development, a minimal footprint is perfectly fine.
+
+    -   CPU: 1 vCPU
+    -   RAM: 1 GB to 2 GB (Ensure the JVM heap is capped around 512 MB to 1 GB).
+    -   Storage: 10 GB to 20 GB of standard block storage.
+
+*** Storage & Disk Architecture (The Most Critical Factor)
+ZooKeeper's biggest bottleneck is disk write latency. It commits every state change 
+to a transaction log sequentially and flushes to disk (fsync) before acknowledging 
+a write to a client.
+
+If you are setting up a production VM, follow these storage best practices:
+    -   Dedicated Log Volume: Attach two separate virtual disks to your VM.
+        -   Disk 1 (dataLogDir): Place the ZooKeeper transaction logs here. This disk 
+                should have high IOPS and low latency (like an SSD) and should not be 
+                shared with the OS or any other applications to prevent write contention.
+        -   Disk 2 (dataDir): Place the snapshot storage here. Snapshots are written 
+                sequentially in the background, so this disk can tolerate lower performance.
+    - No Network-Attached Bottlenecks: If using cloud VMs, ensure your network-attached 
+        volumes have guaranteed IOPS burst caps, or use local SSDs if data replication 
+        across the ensemble is sufficient for your disaster recovery plans.
+
+
+*** OS & Software PrerequisitesOperating System: 
+
+Production deployments strongly favor Linux (Debian, Ubuntu, RHEL/Rocky). Windows and macOS are only 
+recommended for client/development setups.
+
+Java Runtime: ZooKeeper requires Java. Version 3.5+ generally supports Java 8, 11, or 17 LTS. 
+    Ensure JAVA_HOME is exported properly.  
+    
+Swappiness: It is highly recommended to minimize or completely disable swap space on the 
+    Linux VM host (vm.swappiness = 0 or 1). If ZooKeeper hits virtual memory swap space, 
+    heartbeats will drop, leading to cascading leader election failures across your cluster.
+
+*** Network Configuration (Ports to open)
+If configuring firewall rules or Security Groups for your VMs, make sure the following ports 
+are open internally/externally:
+
+    - 2181: For client connections.  
+    - 2888: Used by follower nodes to connect to the leader node (internal cluster communication).  
+    - 3888: Used by cluster nodes for leader election.  
