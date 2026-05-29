@@ -15,3 +15,5 @@ gcloud billing projects link $PROJECT_ID --billing-account=BILLING_ACCOUNT_ID
 gcloud services enable compute.googleapis.com --project=$PROJECT_ID
 gcloud services enable config.googleapis.com  --project=$PROJECT_ID 
 gcloud services enable iam.googleapis.com --project=$PROJECT_ID 
+gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
+gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
